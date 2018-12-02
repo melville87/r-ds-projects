@@ -369,10 +369,33 @@ corrplot(corrData,
 <pre class="r"><code>corrData[&quot;x3s&quot;, &quot;x2s&quot;]</code></pre>
 <pre><code>## [1] 0.8495147</code></pre>
 <p>Some of these predictors will be removed prior to fitting a linear model to the data.</p>
+<p>The next steps to build a predictive model for the sales volume involve:</p>
+<ul>
+<li>the selection of a machine learning algorithm to apply to the dataset</li>
+<li>a validation step to optimize the parameters of the algorithm so as the risk of overfitting is minimized, and</li>
+<li>a test step to see how well the model fares when predicting unseen data.</li>
+</ul>
 </div>
 </div>
 <div id="model-selection-and-validation-gradient-boosted-machines" class="section level2">
 <h2>3. Model Selection and Validation: Gradient Boosted Machines</h2>
+<p>We will first try to fit a tree-based model, namely a gradient-boosted tree model from the <code>gbm</code> package.</p>
+<pre class="r"><code># split dataset into train and test set
+set.seed(1987)
+train_indices &lt;- 
+  createDataPartition(prod_exist$Vol,
+                      p= 0.75,
+                      list= F,
+                      times= 1)
+data_train &lt;- prod_exist[ train_indices, ]
+data_test &lt;- prod_exist[ -train_indices, ]</code></pre>
+<p>10-fold cross validation helps avoid overfitting, i.e. reproducing too closely the patterns in the dataset, which often decreases the predictive performances of the model on new, unseen data.</p>
+<pre class="r"><code># model validation: 10-fold cross-validation
+ctrl &lt;- 
+  trainControl(method= 'repeatedcv',
+               number= 10,
+               repeats= 50,
+               summaryFunction= defaultSummary)</code></pre>
 </div>
 
 

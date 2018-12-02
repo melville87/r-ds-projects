@@ -248,11 +248,41 @@ corrData["x4s", "x3s"]
 corrData["x3s", "x2s"]
 ```
 
-Some of these predictors will be removed prior to fitting a linear model to the data. 
+Some of these predictors will be removed prior to fitting a linear model to the data.   
+
+The next steps to build a predictive model for the sales volume involve:   
+
+* the selection of a machine learning algorithm to apply to the dataset 
+* a validation step to optimize the parameters of the algorithm so as the risk of overfitting is minimized, and 
+* a test step to see how well the model fares when predicting unseen data. 
 
 
 ## 3. Model Selection and Validation: Gradient Boosted Machines 
 
+We will first try to fit a tree-based model, namely a gradient-boosted tree model from the `gbm` package. 
+
+```{r split dataset}
+# split dataset into train and test set
+set.seed(1987)
+train_indices <- 
+  createDataPartition(prod_exist$Vol,
+                      p= 0.75,
+                      list= F,
+                      times= 1)
+data_train <- prod_exist[ train_indices, ]
+data_test <- prod_exist[ -train_indices, ]
+```
+
+10-fold cross validation helps avoid overfitting, i.e. reproducing too closely the patterns in the dataset, which often decreases the predictive performances of the model on new, unseen data. 
+
+```{r cross validation}
+# model validation: 10-fold cross-validation
+ctrl <- 
+  trainControl(method= 'repeatedcv',
+               number= 10,
+               repeats= 50,
+               summaryFunction= defaultSummary)
+```
 
 
 
