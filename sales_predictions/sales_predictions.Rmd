@@ -1,18 +1,19 @@
 ---
 title: "Prediction of Sales Volumes"
-author: "Giacomo Lovat"
+author: "G. L."
 date: "15/10/2018"
 output:
-  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
 	echo = TRUE,
 	fig.align = "center",
-	fig.height = 3,
+	fig.height = 4,
 	fig.path = "Figs/",
-	fig.width = 4,
+	fig.width = 5,
 	message = FALSE,
 	warning = FALSE
 )
