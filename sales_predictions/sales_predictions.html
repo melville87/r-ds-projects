@@ -394,8 +394,36 @@ data_test &lt;- prod_exist[ -train_indices, ]</code></pre>
 ctrl &lt;- 
   trainControl(method= 'repeatedcv',
                number= 10,
-               repeats= 50,
+               repeats= 30,
                summaryFunction= defaultSummary)</code></pre>
+<p>Fit a GBM model to the dataset.</p>
+<pre class="r"><code># gbm model fit
+# set search grid for parameters
+gbmGrid &lt;- 
+  expand.grid(n.trees= c(300, 400, 500, 600, 700), 
+              interaction.depth= c(4, 5, 6, 7, 8),
+              shrinkage= 0.01,
+              n.minobsinnode= 2)
+
+# fit without scaling
+gbm &lt;- 
+  train(Vol ~ .,
+        data= data_train,
+        method= 'gbm',
+        trControl= ctrl,
+        tuneGrid= gbmGrid,
+        preProc= NULL,
+        metric= 'RMSE',
+        verbose= F)</code></pre>
+<p>The optimal model parameters are <code>n.trees</code> = 600 and <code>interaction.depth</code> = 8; the RMSE curve as a function of the number of trees and tree depth can be displayed with the <code>plot</code> command:</p>
+<pre class="r"><code>plot(gbm)</code></pre>
+<p>Information about the model performance on each resample, including variable importance, is displayed with the <code>summary</code> function.</p>
+<pre class="r"><code>summary(gbm)</code></pre>
+<p>The optimal model has an R squared of ~0.71, and an RMSE ~200. Interestingly, many variables have little relevance to the quality of the fit as can be seen from the variable importance bar plot. We could refit the model after removing all variables with importance parameter less than 2, for instance, without significant losses of predictive performance.</p>
+</div>
+<div id="model-support-vector-machines-with-linear-kernel" class="section level2">
+<h2>4. Model: Support Vector Machines with Linear Kernel</h2>
+<p>Next, we fit a predictive model that uses the SVM algorithm with linear kernel function.</p>
 </div>
 
 

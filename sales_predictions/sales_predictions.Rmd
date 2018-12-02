@@ -280,9 +280,122 @@ data_test <- prod_exist[ -train_indices, ]
 ctrl <- 
   trainControl(method= 'repeatedcv',
                number= 10,
-               repeats= 50,
+               repeats= 30,
                summaryFunction= defaultSummary)
 ```
+
+Fit a GBM model to the dataset. 
+
+```{r gbm fit}
+# gbm model fit
+# set search grid for parameters
+gbmGrid <- 
+  expand.grid(n.trees= c(300, 400, 500, 600, 700), 
+              interaction.depth= c(4, 5, 6, 7, 8),
+              shrinkage= 0.01,
+              n.minobsinnode= 2)
+
+# fit without scaling
+gbm <- 
+  train(Vol ~ .,
+        data= data_train,
+        method= 'gbm',
+        trControl= ctrl,
+        tuneGrid= gbmGrid,
+        preProc= NULL,
+        metric= 'RMSE',
+        verbose= F)
+```
+
+The optimal model parameters are `n.trees` = 600 and `interaction.depth` = 8; the RMSE curve as a function of the number of trees and tree depth can be displayed with the `plot` command: 
+
+```{r rmse plot}
+plot(gbm)
+```
+
+Information about the model performance on each resample, including variable importance, is displayed with the `summary` function.  
+
+```{r model summary}
+summary(gbm)
+```
+
+The optimal model has an R squared of ~0.71, and an RMSE ~200. Interestingly, many variables have little relevance to the quality of the fit as can be seen from the variable importance bar plot. We could refit the model after removing all variables with importance parameter less than 2, for instance, without significant losses of predictive performance. 
+
+
+## 4. Model: Support Vector Machines with Linear Kernel
+
+Next, we fit a predictive model that uses the SVM algorithm with linear kernel function. 
+
+```{r svm fit}
+# SVM fit
+# set search grid for parameters
+svmGrid <- 
+  expand.grid(C= c(0.1, 0.5, 1, 5, 10))
+
+# fit without scaling 
+svm_lin <- 
+  train(Vol ~ .,
+        data= data_train,
+        method= 'svmLinear',
+        trControl= ctrl,
+        tuneGrid= svmGrid,
+        preProc= NULL,
+        metric= 'RMSE',
+        verbose= F)
+```
+
+A look at the RMSE against cost parameter. 
+
+```{r svm cost plot}
+plot(svm_lin)
+```
+
+And model summary. 
+
+```{r svm summary}
+print(svm_lin)
+```
+
+
+## 5. Model: Multiple Linear Regression
+
+Highly correlated predictors have to be removed before fitting a linear model as a multiple linear regression model is constructed assuming that predictors are non-collinear. The model can estimate the variation in the response variable (volume) if any of the independent variables is changed, while all the other are kept constant.  
+
+However, other assumptions have to be met in order for a linear regression model to be appropriate for the particular dataset under investigation. These include: the independent variables must be normally distributed, the errors must be uncorrelated and normally distributed with the same variance. 
+
+We can see that the assumption of normality of the independent variables is violated by visualizing the normalized quantile-quantile plot of some predictors. For example: 
+
+```{r qqplot}
+qqnorm(prod_exist$Price)
+```
+
+`Price` is clearly far from being normally distributed (the quantile points should line up to form a straight line, if the variable were normally distributed). As a consequence, a linear regression model is not appropriate for this data - it may produce unreliable estimates. 
+
+
+## 6. Model: Regularized Random Forest. 
+
+We choose to fit a Regularized Random Forest model instead. The regularization term peforms feature selection by evaluating and comparing the importance (e.g. impurity decrease) of different features while growing the forest. It penalizes features that lead to a low impurity decrease relative to features already used for growing previous trees. 
+
+```{r rf fit}
+# regularized random forest fit
+# set search grid for parameters
+rrfGrid <- 
+  expand.grid(mtry = c(0.2, 0.3, 0.5, 0.75), 
+              coefReg = c(0.2, 0.5, 0.8), 
+              coefImp = c(0.1, 0.25, 0.5))
+
+# fit without scaling 
+rrf <- 
+  train(Vol ~ .,
+        data= data_train,
+        method= 'RRF',
+        trControl= ctrl,
+        tuneGrid= rrfGrid,
+        preProc= NULL,
+        metric= 'RMSE',
+        verbose= F)
+```
+
 
 
 
