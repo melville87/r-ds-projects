@@ -4,12 +4,12 @@ author: "Giacomo Lovat"
 date: "15/10/2018"
 output:
   pdf_document: default
-  html_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.width=6, fig.height=4, 
-                      fig.path='Figs/', warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=3, 
+                      fig.path='Figs/', fig.align = 'center',
+                      warning=FALSE, message=FALSE)
 ```
 
 ## 1. The Dataset: Products and Attributes
@@ -119,7 +119,7 @@ qqnorm(prod_exist$Vol)
 A normalized quantile-quantile plot shows that the `Volume` target variable differs significantly from a normally distributed random variable. In particular, there are at least two points which stand out due to their huge volumes as is also apparent by looking at the boxplot below. 
 
 ```{r volume boxplot}
-boxplot(x = prod_exist$Vol, xlab = 'sales volume')
+boxplot(x = prod_exist$Vol, ylab = 'sales volume')
 ```
 
 These points are removed by taking the observations having sales volume < 5000 units. 
