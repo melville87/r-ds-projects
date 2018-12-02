@@ -1,0 +1,253 @@
+---
+title: "Prediction of Sales Volumes"
+author: "Giacomo Lovat"
+date: "15/10/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width=6, fig.height=4, 
+                      fig.path='Figs/', warning=FALSE, message=FALSE)
+```
+
+## 1. The Dataset: Products and Attributes
+
+A company selling electronic items is interested in estimating the market potential of a series of new products that it plans to launch to the market. The sales potential of these new products can be predicted using information of similar products already in the market. This information is available as a dataset containing various types of products and their attributes. Specifically, the table contains:     
+
+* 245 electronic products of various types (computers, displays, consoles, etc.). 
+* 22 variables describing various product attributes. 
+
+```{r set working directory}
+wd <- file.path('~',
+                'GitRepos',
+                'r-ds-projects', 
+                'sales_predictions')
+setwd(dir= wd)
+```
+
+```{r load libraries}
+library(readr)
+library(stringr)
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
+library(corrplot)
+library(caret)
+library(gbm)
+library(doMC)
+
+# parallelization
+registerDoMC(cores = 4)
+```
+
+```{r read dataset}
+# read dataset of existing products
+input_file <- file.path('.',
+                        'existing_products.csv')
+if( !file.exists(input_file) ) {
+  print('File:')
+  print(input_file)
+  print('not found!. Current dir:')
+  getwd()
+}
+prod_exist <- read.csv(input_file, dec= ',', sep= ';')
+```
+
+A look at the structure of the dataset. 
+
+```{r dataset structure}
+str(prod_exist)
+```
+
+Our target variable is the sales volume `Volume`. We notice that two predictors are just identifiers and can be removed: `X` and `Product_ID`. The description of the remaining 20 variables is the following:  
+
+* `Product_type`: type of electronic product (categorical). 
+* `Prices`: price of product (numeric). 
+* `X5Stars` - `X1Stars`: number of n-star product reviews (integer). 
+* `PositiveServiceReview`, `NegativeServiceReview`: number of positive and negative reviews of product service (integer). 
+* `Would_consumer_recommend_product`: score (from 0 to 1) assigned by user to the product (numeric). 
+* `Best_Seller_Rank`: position of product in sales ranking (integer).
+* `Weight`: product weight (lbs., numeric). 
+* `Depth`: product depth (in., numeric). 
+* `Height`: product height (in., numeric). 
+* `Profit_margin`: profit (fraction of price, numeric). 
+* `Volume`: sales volume (units, integer). 
+* `Competitors`: number of competitor products in the market (integer). 
+* `Professional`: professional or business products (integer 0 or 1). 
+* `Age`: time of product since launch in the market (integer).  
+
+We start by simplifying the feature names: 
+
+```{r modify feature names}
+# remove useless columns (index, product id), 
+# rename features
+prod_exist %>% subset(., select= -c(X, Product_ID)) -> prod_exist
+new_colnames <- c('Type', 'Price', 'x5s', 'x4s', 'x3s',
+                  'x2s', 'x1s', 'PosServ', 'NegServ',
+                  'Recommend', 'BestSeller', 'Weight',
+                  'Depth', 'Width', 'Height', 'Profit',
+                  'Vol', 'Comp', 'Prfsn', 'Age')
+names(prod_exist) <- new_colnames
+```
+
+Some predictor data types need to be changed to reflect their meanining: `Professional` should be a factor with two levels ("No", "Yes"), whereas `Depth` is a numeric variable. 
+
+```{r change predictor data types}
+# update predictors data types 
+prod_exist$Prfsn %>% 
+  factor(levels = c(0, 1), 
+         labels = c("No", "Yes")) -> prod_exist$Prfsn
+
+prod_exist$Depth %>%
+  as.character(.) %>%
+  as.numeric(.) -> prod_exist$Depth
+
+head(prod_exist)
+```
+
+
+## 2. Cleaning and Exploration of the Dataset
+
+We may first have a look at the distribution of the dependent variable to check for the presence of outliers that may have an outsized effect on the predictive models. 
+
+```{r quantile-quantile plot}
+qqnorm(prod_exist$Vol)
+```
+
+A normalized quantile-quantile plot shows that the `Volume` target variable differs significantly from a normally distributed random variable. In particular, there are at least two points which stand out due to their huge volumes as is also apparent by looking at the boxplot below. 
+
+```{r volume boxplot}
+boxplot(x = prod_exist$Vol, xlab = 'sales volume')
+```
+
+These points are removed by taking the observations having sales volume < 5000 units. 
+
+```{r remove volume outliers}
+# remove outliers
+prod_exist <- filter(prod_exist, Vol < 5000)
+```
+
+Secondly, observation with NA values may also be present in the dataset. 
+
+```{r check for NAs}
+# find and store NAs on separate data frame
+nas <- prod_exist[!complete.cases(prod_exist), ]
+dim(nas)
+```
+
+```{r which rows are nas}
+summary(nas)
+```
+
+There are 16 NAs, 15 of which in the `BestSeller` column, and 1 in the `Width` column. They're a relatively small number so we'll remove them from the dataset.  
+
+```{r remove NAs}
+# remove NAs
+prod_exist %>%
+  .[complete.cases(.), ] -> prod_exist
+```
+
+Finally, to gain insight into how the observations are distributed in our dataset, let's examine the distribution of the sales volume variable against some predictors. 
+
+```{r sales volume vs product type}
+ggboxplot(data= prod_exist, 
+          x = 'Type',
+          y = 'Vol', 
+          fill= 'grey') + 
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+```{r sales volume vs professional}
+ggboxplot(data= prod_exist, 
+          x = 'Prfsn',
+          y = 'Vol', 
+          fill= 'grey') + 
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+We may expect that the sales volume be influenced by the amount of positive product reviews. The correlation between the variables volume and number of n-star reviews can be displayed using scatterplots. 
+
+```{r scatterplots sales v 5-s}
+ggscatter(data= prod_exist, 
+          x = 'x5s',
+          y = 'Vol', 
+          fill= 'grey') + 
+  labs(title = 'Sales v number of 5-star reviews')
+```
+
+```{r scatterplots sales v 4-s}
+ggscatter(data= prod_exist, 
+          x = 'x4s',
+          y = 'Vol', 
+          fill= 'grey') + 
+  labs(title = 'Sales v number of 4-star reviews')
+```
+
+The correlation is really strong for the 5-star reviews, less so for the 4-star reviews. Correlations between numerical features can be examined in more detail by calculating Pearson's correlation coefficient between feature pairs.   
+
+
+### 2.1 Quantifying and Visualizing Correlations between Variables 
+
+Determining correlations between variables is useful if we need to get rid of highly correlated predictors in order to fit the dataset with a linear model, for instance. 
+
+```{r reorder columns}
+# set volume as last column in dataset
+prod_exist <- prod_exist[ c(1:16, 18, 19, 20, 17) ]
+```
+
+```{r calculate correlations}
+# generate dummy variables for factors
+dmy <- dummyVars('~ .', data = prod_exist)
+prod_dmy <- prod_exist %>%
+            predict(dmy, .) %>%
+            data.frame()
+
+# calculate correlations
+corrData <- cor(prod_dmy)
+new_colnames <-
+  c('Typ.Acc', 'Typ.Disp', 'Typ.ExtW', 'Typ.GCons',
+    'Typ.Lap', 'Typ.Net', 'Typ.PC', 'Typ.Prn',
+    'Typ.PrnSupp', 'Typ.Smar', 'Typ.Soft',
+    'Typ.Tab', 'Price', 'x5s', 'x4s',
+    'x3s', 'x2s', 'x1s', 'PSer', 'NSer', 'Rec',
+    'BSell', 'Wei', 'Dep', 'Wid', 'Hei', 'Prof', 
+    'Comp', 'Prf.No', 'Prf.Yes', 'Age', 'Vol')
+
+# shorten column and row names for plotting
+colnames(corrData) <- new_colnames
+rownames(corrData) <- new_colnames
+
+# display correlogram
+corrplot(corrData,
+         method = 'square',
+         type = 'lower',
+         na.label= 'o',
+         tl.srt= 30)
+```
+
+Highly correlated (collinear) predictors include:   
+
+* `x5s` and `Vol`, 
+* all pairs of n-star reviews predictors (`x5s` to `x1s`).  
+
+The correlation coefficients for a select pair of variables can be displayed via the following: 
+
+```{r display coeff}
+corrData["Vol", "x5s"]
+corrData["x5s", "x4s"]
+corrData["x4s", "x3s"]
+corrData["x3s", "x2s"]
+```
+
+Some of these predictors will be removed prior to fitting a linear model to the data. 
+
+
+## 3. Model Selection and Validation: Gradient Boosted Machines 
+
+
+
+
+
+
+
+
