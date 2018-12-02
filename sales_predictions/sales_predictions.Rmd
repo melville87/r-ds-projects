@@ -7,9 +7,15 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=3, 
-                      fig.path='Figs/', fig.align = 'center',
-                      warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	fig.align = "center",
+	fig.height = 3,
+	fig.path = "Figs/",
+	fig.width = 4,
+	message = FALSE,
+	warning = FALSE
+)
 ```
 
 ## 1. The Dataset: Products and Attributes
