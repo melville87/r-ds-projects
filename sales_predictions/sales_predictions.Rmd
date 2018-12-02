@@ -257,7 +257,7 @@ The next steps to build a predictive model for the sales volume involve:
 * a test step to see how well the model fares when predicting unseen data. 
 
 
-## 3. Model Selection and Validation: Gradient Boosted Machines 
+## 3. Model: Gradient Boosted Machines 
 
 We will first try to fit a tree-based model, namely a gradient-boosted tree model from the `gbm` package. 
 
@@ -372,7 +372,7 @@ qqnorm(prod_exist$Price)
 `Price` is clearly far from being normally distributed (the quantile points should line up to form a straight line, if the variable were normally distributed). As a consequence, a linear regression model is not appropriate for this data - it may produce unreliable estimates. 
 
 
-## 6. Model: Regularized Random Forest. 
+## 6. Model: Regularized Random Forest
 
 We choose to fit a Regularized Random Forest model instead. The regularization term peforms feature selection by evaluating and comparing the importance (e.g. impurity decrease) of different features while growing the forest. It penalizes features that lead to a low impurity decrease relative to features already used for growing previous trees. 
 
@@ -397,6 +397,20 @@ rrf <-
 ```
 
 
+## 7. Model Selection
+
+
+```{r model selection}
+# compare models
+# significance test on resamples
+sig_test <- 
+  resamples( list('gbm'= gbm,
+                  'svm'= svm_lin,
+                  'reg rf'= rrf) )
+# plot perf. metrics 
+bwplot(sig_test,
+       scales = list(x = list(relation = "free")))
+```
 
 
 
