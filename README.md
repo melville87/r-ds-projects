@@ -13,7 +13,7 @@ The best model is selected after comparing the results on cross-validation sampl
 * __Indoor positioning by WiFi localization__: a dataset that includes a set of WAP (wireless access point) signal intensities (RSSI) along with information about the position of the phone that recorded them (which consists of four attributes: building, floor, longitude and latitude) is leveraged to train a model that will predict the phone location. The model is deployed to predict the phone location on a different validation dataset. Tested models include: 
   1. K Nearest Neighbors (KNN) with distance-dependent weights (`kknn`). 
   2. Support Vector Machines (`svmLinear`). 
-  3. Gradient-boosted trees with XGBoost (`xbgtree`). 
+  3. Gradient-boosted trees with XGBoost (`xgbTree`). 
  Further analysis is conducted to determine which of the many predictors are most significant using principal component analysis (in progress). 
 
 * __Finding association rules__: the package `arules` provides a convenient tool to investigate customer buying patterns in a database of transactions. Association rules between groups of products bought by customers can be constructed and evaluated to give a picture of the type of items that customers most frequently buy together. 
