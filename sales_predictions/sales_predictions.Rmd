@@ -3,8 +3,7 @@ title: "Prediction of Sales Volumes"
 author: "G. L."
 date: "15/10/2018"
 output:
-  html_document:
-    df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -290,8 +289,8 @@ Fit a GBM model to the dataset.
 # gbm model fit
 # set search grid for parameters
 gbmGrid <- 
-  expand.grid(n.trees= c(300, 400, 500, 600, 700), 
-              interaction.depth= c(4, 5, 6, 7, 8),
+  expand.grid(n.trees= c(200, 300, 400, 500), 
+              interaction.depth= c(5, 6, 7, 8),
               shrinkage= 0.01,
               n.minobsinnode= 2)
 
