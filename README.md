@@ -10,5 +10,6 @@ The best model is selected after comparing the results on cross-validation sampl
 
 * __Predictive Analytics on customer preferences__: brand preferences of ~10k customers of a company selling electronic items have been collected through a market survey. Part of the dataset is however missing: a machine learning model fitted on the complete dataset (survey_complete.csv) helps fill the gap by predicting the customer preferences on the incomplete survey dataset (survey_incomplete.csv). A breakdown of customers' preferences by customer feature (e.g.: income, location, etc.) can be achieved by visualizing the data with the `ggplot` package.  
 
-* __Indoor positioning by WiFi localization__: 
+* __Indoor positioning by WiFi localization__: a dataset that includes a set of WPA wireless access points signal intensities (RSSI) along with information about the position of the phones that recorded them (which consists of four attributes: building, floor, longitude and latitude) is leveraged to train a model that will predict the phone location. The model is deployed to predict the phone location on a different validation dataset. 
 
+* __Finding association rules__: the package `arules` provides a convenient tool to investigate customer buying patterns in a database of transactions. Association rules between groups of products bought by customers can be constructed and evaluated to give a picture of the type of items that customers most frequently buy together. 
