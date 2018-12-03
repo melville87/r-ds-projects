@@ -380,9 +380,9 @@ We choose to fit a Regularized Random Forest model instead. The regularization t
 # regularized random forest fit
 # set search grid for parameters
 rrfGrid <- 
-  expand.grid(mtry = c(0.2, 0.3, 0.5, 0.75), 
-              coefReg = c(0.2, 0.5, 0.8), 
-              coefImp = c(0.1, 0.25, 0.5))
+  expand.grid(mtry = 0.75, 
+              coefReg = 0.8, 
+              coefImp = 0.25)
 
 # fit without scaling 
 rrf <- 
@@ -398,6 +398,7 @@ rrf <-
 
 
 ## 7. Model Selection
+
 
 
 ```{r model selection}
